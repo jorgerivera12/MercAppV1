@@ -1,6 +1,7 @@
 <script setup>
 import AppNav from '@/components/AppNav.vue'
 import AppLoader from '@/components/AppLoader.vue'
+import AppFooter from '@/components/AppFooter.vue'
 </script>
 
 <template>
@@ -15,4 +16,5 @@ import AppLoader from '@/components/AppLoader.vue'
       </template>
     </Suspense>
   </RouterView>
+  <AppFooter />
 </template>

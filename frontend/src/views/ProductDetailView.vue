@@ -3,6 +3,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/api/index.js'
 import { useCart } from '@/composables/useCart.js'
+import { useCartAlert } from '@/composables/useCartAlert.js'
+import { useRecentlyViewed } from '@/composables/useRecentlyViewed.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,8 +13,9 @@ const product = ref(null)
 const categories = ref([])
 const loading = ref(false)
 const error = ref(null)
-const added = ref(false)
 const { addItem } = useCart()
+const { showAddedToCart } = useCartAlert()
+const { track } = useRecentlyViewed()
 
 const categoryName = computed(() => {
   if (!product.value || !categories.value.length) return ''
@@ -28,6 +31,7 @@ onMounted(async () => {
     ])
     product.value = prod
     categories.value = cats
+    track(prod)
   } catch (err) {
     if (err.message.includes('no encontrado')) {
       router.replace({ name: 'not-found' })
@@ -41,8 +45,7 @@ onMounted(async () => {
 
 function addToCart() {
   addItem(product.value, 1)
-  added.value = true
-  setTimeout(() => { added.value = false }, 2500)
+  showAddedToCart(product.value.name)
 }
 </script>
 
@@ -91,7 +94,6 @@ function addToCart() {
           Añadir al carrito
         </button>
 
-        <p v-if="added" class="feedback--success">¡Producto añadido al carrito!</p>
       </div>
     </article>
   </div>
@@ -99,9 +101,9 @@ function addToCart() {
 
 <style scoped>
 .detail-page {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 32px 24px;
 }
 
 .back-link {
@@ -200,19 +202,23 @@ function addToCart() {
 
 .btn-add {
   margin-top: 8px;
-  padding: 12px 24px;
+  padding: 14px 32px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   background: var(--color-primary);
   color: #fff;
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, transform 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: 100%;
 }
 
 .btn-add:hover:not(:disabled) {
   background: var(--color-primary-dark);
+  transform: scale(1.01);
 }
 
 .btn-add:disabled {
@@ -231,9 +237,4 @@ function addToCart() {
   color: var(--color-danger);
 }
 
-.feedback--success {
-  font-size: 0.9rem;
-  color: #16a34a;
-  font-weight: 500;
-}
 </style>
