@@ -11,6 +11,12 @@ API REST construida con **Node.js + Express** que sirve el catálogo de producto
 | Node.js     | 18.x           |
 | pnpm        | 9.x            |
 
+> Si no tenés `pnpm` instalado, instalalo globalmente con npm:
+> ```bash
+> npm install -g pnpm
+> ```
+> Luego cerrá y volvé a abrir la terminal para que el comando quede disponible.
+
 ---
 
 ## Instalación
@@ -18,6 +24,8 @@ API REST construida con **Node.js + Express** que sirve el catálogo de producto
 ```bash
 # Desde la raíz del proyecto
 cd backend
+
+# Instalar dependencias (incluye nodemon como devDependency)
 pnpm install
 
 # Poblar la base de datos con datos de prueba

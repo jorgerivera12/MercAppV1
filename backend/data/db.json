@@ -24,7 +24,7 @@
   "products": [
     {
       "id": 1,
-      "name": "Auriculares Bluetooth",
+      "name": "Auriculares BluetoothV2",
       "description": "Auriculares inalámbricos con cancelación de ruido y 30h de batería.",
       "price": 59.99,
       "imageUrl": "https://placehold.co/400x300?text=Auriculares",
