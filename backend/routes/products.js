@@ -1,10 +1,15 @@
 const { Router } = require('express')
 const { readDB, writeDB, nextId } = require('../lib/db')
+const { encodeProductId, decodeProductId, encodeCategoryId, decodeCategoryId } = require('../lib/hashids')
 
 const router = Router()
 
-// Returns an error string if the body fails validation, null otherwise.
-// In partial mode (PATCH) only validates fields that are present.
+function encodeProduct(p) {
+  return { ...p, id: encodeProductId(p.id), categoryId: encodeCategoryId(p.categoryId) }
+}
+
+// categoryId in request body is an encoded string — only structural check here.
+// Existence + decode validation happens inside each route handler.
 function validateProduct(body, { partial = false } = {}) {
   const { name, price, categoryId, stock, description, imageUrl } = body
 
@@ -20,9 +25,8 @@ function validateProduct(body, { partial = false } = {}) {
     }
   }
   if (!partial || categoryId !== undefined) {
-    if (categoryId === undefined || categoryId === null) return 'categoryId es obligatorio'
-    if (!Number.isInteger(categoryId) || categoryId <= 0) {
-      return 'categoryId debe ser un entero positivo'
+    if (!categoryId || typeof categoryId !== 'string') {
+      return 'categoryId es obligatorio'
     }
   }
   if (stock !== undefined) {
@@ -39,18 +43,15 @@ function validateProduct(body, { partial = false } = {}) {
   return null
 }
 
-// Supports optional ?categoryId=N and ?q=term filters (combinable)
 router.get('/', (req, res, next) => {
   try {
     let { products } = readDB()
     const { categoryId, q } = req.query
 
     if (categoryId !== undefined) {
-      const id = Number(categoryId)
-      if (!Number.isInteger(id) || id <= 0) {
-        return res.status(400).json({ error: 'categoryId debe ser un entero positivo' })
-      }
-      products = products.filter(p => p.categoryId === id)
+      const numId = decodeCategoryId(categoryId)
+      if (!numId) return res.status(400).json({ error: 'categoryId inválido' })
+      products = products.filter(p => p.categoryId === numId)
     }
 
     if (q !== undefined) {
@@ -63,7 +64,7 @@ router.get('/', (req, res, next) => {
       }
     }
 
-    res.json(products)
+    res.json(products.map(encodeProduct))
   } catch (err) {
     next(err)
   }
@@ -71,10 +72,14 @@ router.get('/', (req, res, next) => {
 
 router.get('/:id', (req, res, next) => {
   try {
+    const numId = decodeProductId(req.params.id)
+    if (!numId) return res.status(404).json({ error: 'Producto no encontrado' })
+
     const { products } = readDB()
-    const product = products.find(p => p.id === Number(req.params.id))
+    const product = products.find(p => p.id === numId)
     if (!product) return res.status(404).json({ error: 'Producto no encontrado' })
-    res.json(product)
+
+    res.json(encodeProduct(product))
   } catch (err) {
     next(err)
   }
@@ -85,11 +90,12 @@ router.post('/', (req, res, next) => {
     const validationError = validateProduct(req.body)
     if (validationError) return res.status(400).json({ error: validationError })
 
-    const { name, description, price, imageUrl, categoryId, stock } = req.body
+    const { name, description, price, imageUrl, stock } = req.body
+    const numCategoryId = decodeCategoryId(req.body.categoryId)
     const db = readDB()
 
-    if (!db.categories.some(c => c.id === categoryId)) {
-      return res.status(400).json({ error: `La categoría con id ${categoryId} no existe` })
+    if (!numCategoryId || !db.categories.some(c => c.id === numCategoryId)) {
+      return res.status(400).json({ error: 'La categoría seleccionada no es válida' })
     }
 
     const newProduct = {
@@ -98,13 +104,13 @@ router.post('/', (req, res, next) => {
       description: description != null ? String(description).trim() : '',
       price,
       imageUrl: imageUrl != null ? String(imageUrl).trim() : '',
-      categoryId,
+      categoryId: numCategoryId,
       stock: stock ?? 0
     }
 
     db.products.push(newProduct)
     writeDB(db)
-    res.status(201).json(newProduct)
+    res.status(201).json(encodeProduct(newProduct))
   } catch (err) {
     next(err)
   }
@@ -115,13 +121,18 @@ router.put('/:id', (req, res, next) => {
     const validationError = validateProduct(req.body)
     if (validationError) return res.status(400).json({ error: validationError })
 
-    const { name, description, price, imageUrl, categoryId, stock } = req.body
+    const numId = decodeProductId(req.params.id)
+    if (!numId) return res.status(404).json({ error: 'Producto no encontrado' })
+
+    const { name, description, price, imageUrl, stock } = req.body
+    const numCategoryId = decodeCategoryId(req.body.categoryId)
     const db = readDB()
-    const index = db.products.findIndex(p => p.id === Number(req.params.id))
+
+    const index = db.products.findIndex(p => p.id === numId)
     if (index === -1) return res.status(404).json({ error: 'Producto no encontrado' })
 
-    if (!db.categories.some(c => c.id === categoryId)) {
-      return res.status(400).json({ error: `La categoría con id ${categoryId} no existe` })
+    if (!numCategoryId || !db.categories.some(c => c.id === numCategoryId)) {
+      return res.status(400).json({ error: 'La categoría seleccionada no es válida' })
     }
 
     db.products[index] = {
@@ -130,12 +141,12 @@ router.put('/:id', (req, res, next) => {
       description: description != null ? String(description).trim() : '',
       price,
       imageUrl: imageUrl != null ? String(imageUrl).trim() : '',
-      categoryId,
+      categoryId: numCategoryId,
       stock: stock ?? 0
     }
 
     writeDB(db)
-    res.json(db.products[index])
+    res.json(encodeProduct(db.products[index]))
   } catch (err) {
     next(err)
   }
@@ -146,17 +157,14 @@ router.patch('/:id', (req, res, next) => {
     const validationError = validateProduct(req.body, { partial: true })
     if (validationError) return res.status(400).json({ error: validationError })
 
+    const numId = decodeProductId(req.params.id)
+    if (!numId) return res.status(404).json({ error: 'Producto no encontrado' })
+
     const db = readDB()
-    const index = db.products.findIndex(p => p.id === Number(req.params.id))
+    const index = db.products.findIndex(p => p.id === numId)
     if (index === -1) return res.status(404).json({ error: 'Producto no encontrado' })
 
-    const { categoryId } = req.body
-    if (categoryId !== undefined && !db.categories.some(c => c.id === categoryId)) {
-      return res.status(400).json({ error: `La categoría con id ${categoryId} no existe` })
-    }
-
-    // Only allow known fields to avoid arbitrary property injection
-    const ALLOWED = ['name', 'description', 'price', 'imageUrl', 'categoryId', 'stock']
+    const ALLOWED = ['name', 'description', 'price', 'imageUrl', 'stock']
     const updates = {}
     for (const key of ALLOWED) {
       if (req.body[key] !== undefined) {
@@ -164,9 +172,17 @@ router.patch('/:id', (req, res, next) => {
       }
     }
 
+    if (req.body.categoryId !== undefined) {
+      const numCategoryId = decodeCategoryId(req.body.categoryId)
+      if (!numCategoryId || !db.categories.some(c => c.id === numCategoryId)) {
+        return res.status(400).json({ error: 'La categoría seleccionada no es válida' })
+      }
+      updates.categoryId = numCategoryId
+    }
+
     db.products[index] = { ...db.products[index], ...updates }
     writeDB(db)
-    res.json(db.products[index])
+    res.json(encodeProduct(db.products[index]))
   } catch (err) {
     next(err)
   }
@@ -174,8 +190,11 @@ router.patch('/:id', (req, res, next) => {
 
 router.delete('/:id', (req, res, next) => {
   try {
+    const numId = decodeProductId(req.params.id)
+    if (!numId) return res.status(404).json({ error: 'Producto no encontrado' })
+
     const db = readDB()
-    const index = db.products.findIndex(p => p.id === Number(req.params.id))
+    const index = db.products.findIndex(p => p.id === numId)
     if (index === -1) return res.status(404).json({ error: 'Producto no encontrado' })
 
     db.products.splice(index, 1)

@@ -131,7 +131,7 @@ async function handleSubmit() {
         <label class="field__label" for="category">Categoría *</label>
         <select
           id="category"
-          v-model.number="form.categoryId"
+          v-model="form.categoryId"
           class="field__input field__select"
           @blur="touch('categoryId')"
           @change="touch('categoryId')"

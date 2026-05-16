@@ -92,7 +92,7 @@ export function useProductForm() {
       name: form.name.trim(),
       description: form.description.trim(),
       price: Number(form.price),
-      categoryId: Number(form.categoryId),
+      categoryId: form.categoryId,
       stock: Number(form.stock),
       imageUrl: form.imageUrl.trim()
     }
