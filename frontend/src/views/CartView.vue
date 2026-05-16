@@ -78,9 +78,9 @@ const { items, itemCount, total, removeItem, updateQuantity, clearCart } = useCa
 
 <style scoped>
 .cart-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 24px 16px;
+  padding: 32px 24px;
 }
 
 .cart-page__header {
@@ -104,6 +104,9 @@ const { items, itemCount, total, removeItem, updateQuantity, clearCart } = useCa
 .back-link {
   font-size: 0.875rem;
   color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .back-link:hover {
@@ -268,6 +271,84 @@ const { items, itemCount, total, removeItem, updateQuantity, clearCart } = useCa
   color: var(--color-primary);
 }
 
+/* ── Responsive mobile ─────────────────────────────── */
+@media (max-width: 639px) {
+  .cart-page {
+    padding: 20px 16px;
+  }
+
+  .cart-page__title {
+    font-size: 1.3rem;
+  }
+
+  /* 2 filas: [img | nombre | ×] / [img | controles | subtotal] */
+  .cart-item {
+    grid-template-columns: 56px 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 6px 12px;
+    padding: 12px;
+  }
+
+  .cart-item__img {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: 56px;
+    height: 56px;
+    align-self: center;
+  }
+
+  .cart-item__info {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .cart-item__name {
+    white-space: normal;
+    font-size: 0.875rem;
+  }
+
+  .cart-item__remove {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    padding: 0;
+  }
+
+  .cart-item__qty {
+    grid-column: 2;
+    grid-row: 2;
+    gap: 6px;
+  }
+
+  .qty-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .cart-item__subtotal {
+    grid-column: 3;
+    grid-row: 2;
+    min-width: unset;
+    align-self: center;
+    font-size: 0.95rem;
+  }
+
+  .cart-footer {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .cart-total {
+    align-items: center;
+  }
+
+  .btn--ghost {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* Botones */
 .btn {
   padding: 10px 20px;
@@ -282,6 +363,9 @@ const { items, itemCount, total, removeItem, updateQuantity, clearCart } = useCa
 .btn--primary {
   background: var(--color-primary);
   color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 700;
 }
 
 .btn--primary:hover {
