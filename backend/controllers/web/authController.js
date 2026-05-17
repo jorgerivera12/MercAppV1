@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
-const Usuario = require('../../models/Usuario');
+const authService = require('../../services/authService');
 
-// Opción de layout compartida para no repetirla en cada llamada a render
 const LAYOUT_AUTH = { layout: 'auth' };
 
 exports.formRegistro = (req, res) => {
@@ -13,10 +12,9 @@ exports.registro = async (req, res) => {
   if (!errores.isEmpty()) {
     return res.render('auth/registro', { title: 'Registro', ...LAYOUT_AUTH, errores: errores.array(), body: req.body });
   }
-
   const { nombre, email, password } = req.body;
   try {
-    const existe = await Usuario.findOne({ email });
+    const existe = await authService.findByEmail(email);
     if (existe) {
       return res.render('auth/registro', {
         title: 'Registro', ...LAYOUT_AUTH,
@@ -24,8 +22,7 @@ exports.registro = async (req, res) => {
         body: req.body
       });
     }
-
-    await Usuario.create({ nombre, email, password });
+    await authService.create({ nombre, email, password });
     res.redirect('/login');
   } catch {
     res.render('auth/registro', {
@@ -45,22 +42,19 @@ exports.login = async (req, res) => {
   if (!errores.isEmpty()) {
     return res.render('auth/login', { title: 'Iniciar sesión', ...LAYOUT_AUTH, errores: errores.array(), body: req.body });
   }
-
   const { email, password } = req.body;
   try {
-    const usuario = await Usuario.findOne({ email });
+    const usuario = await authService.findByEmail(email);
     if (!usuario) {
       return res.render('auth/login', { title: 'Iniciar sesión', ...LAYOUT_AUTH, errores: [{ msg: 'Credenciales incorrectas' }], body: req.body });
     }
-
     const valido = await usuario.compararPassword(password);
     if (!valido) {
       return res.render('auth/login', { title: 'Iniciar sesión', ...LAYOUT_AUTH, errores: [{ msg: 'Credenciales incorrectas' }], body: req.body });
     }
-
-    req.session.usuarioId = usuario._id;
+    req.session.usuarioId    = usuario._id;
     req.session.usuarioNombre = usuario.nombre;
-    req.session.usuarioEmail = usuario.email;
+    req.session.usuarioEmail  = usuario.email;
     res.redirect('/productos');
   } catch {
     res.render('auth/login', {

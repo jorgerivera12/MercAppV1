@@ -1,8 +1,8 @@
 const { validationResult } = require('express-validator');
-const Producto = require('../../models/Producto');
+const productService = require('../../services/productService');
 
 exports.listar = async (req, res) => {
-  const productos = await Producto.find().lean().sort({ createdAt: -1 });
+  const productos = await productService.findAll({});
   res.render('productos/lista', { title: 'Productos', productos });
 };
 
@@ -18,7 +18,6 @@ exports.crear = async (req, res) => {
       body: req.body
     });
   }
-
   const errores = validationResult(req);
   if (!errores.isEmpty()) {
     return res.render('productos/nuevo', {
@@ -27,49 +26,44 @@ exports.crear = async (req, res) => {
       body: req.body
     });
   }
-
   const { nombre, descripcion, precio } = req.body;
-  // Cadena vacía coincide con el default del schema cuando no se adjunta imagen
   const imagen = req.file ? req.file.filename : '';
-  await Producto.create({ nombre, descripcion, precio, imagen });
+  await productService.create({ nombre, descripcion, precio, imagen });
   res.redirect('/productos');
 };
 
 exports.formEditar = async (req, res) => {
-  const producto = await Producto.findById(req.params.id).lean();
+  const producto = await productService.findById(req.params.id);
   if (!producto) return res.redirect('/productos');
   res.render('productos/editar', { title: 'Editar Producto', producto });
 };
 
 exports.actualizar = async (req, res) => {
   if (req.uploadError) {
-    const producto = await Producto.findById(req.params.id).lean();
+    const producto = await productService.findById(req.params.id);
     return res.render('productos/editar', {
       title: 'Editar Producto',
       producto,
       errores: [{ msg: req.uploadError }]
     });
   }
-
   const errores = validationResult(req);
   if (!errores.isEmpty()) {
-    const producto = await Producto.findById(req.params.id).lean();
+    const producto = await productService.findById(req.params.id);
     return res.render('productos/editar', {
       title: 'Editar Producto',
       producto,
       errores: errores.array()
     });
   }
-
   const { nombre, descripcion, precio } = req.body;
   const data = { nombre, descripcion, precio };
-  // Solo sobreescribir la imagen si el usuario subió un archivo nuevo en la edición
   if (req.file) data.imagen = req.file.filename;
-  await Producto.findByIdAndUpdate(req.params.id, data);
+  await productService.update(req.params.id, data);
   res.redirect('/productos');
 };
 
 exports.eliminar = async (req, res) => {
-  await Producto.findByIdAndDelete(req.params.id);
+  await productService.remove(req.params.id);
   res.redirect('/productos');
 };
