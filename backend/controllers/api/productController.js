@@ -1,10 +1,13 @@
-const { Router } = require('express');
 const mongoose = require('mongoose');
 const Producto = require('../../models/Producto');
 const Categoria = require('../../models/Categoria');
 
-const router = Router();
+const FIELD_MAP = {
+  name: 'nombre', description: 'descripcion', price: 'precio',
+  imageUrl: 'imagen', stock: 'stock'
+};
 
+// Prefija /uploads/ si la imagen fue subida localmente; las URLs externas se usan tal cual
 function toApi(p) {
   const imagen = p.imagen ?? '';
   const imageUrl = imagen && !imagen.startsWith('http') ? `/uploads/${imagen}` : imagen;
@@ -23,6 +26,7 @@ function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
 }
 
+// partial=true permite campos ausentes (comportamiento PATCH); false exige todos los campos (PUT/POST)
 function validateBody(body, { partial = false } = {}) {
   const { name, price, categoryId, stock, description, imageUrl } = body;
 
@@ -54,8 +58,7 @@ function validateBody(body, { partial = false } = {}) {
   return null;
 }
 
-// GET /api/products?categoryId=&q=
-router.get('/', async (req, res, next) => {
+exports.getAll = async (req, res, next) => {
   try {
     const filter = {};
     const { categoryId, q } = req.query;
@@ -79,10 +82,9 @@ router.get('/', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// GET /api/products/:id
-router.get('/:id', async (req, res, next) => {
+exports.getOne = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(404).json({ error: 'Producto no encontrado' });
     const producto = await Producto.findById(req.params.id).lean();
@@ -91,10 +93,9 @@ router.get('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// POST /api/products
-router.post('/', async (req, res, next) => {
+exports.create = async (req, res, next) => {
   try {
     const error = validateBody(req.body);
     if (error) return res.status(400).json({ error });
@@ -119,10 +120,9 @@ router.post('/', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// PUT /api/products/:id
-router.put('/:id', async (req, res, next) => {
+exports.update = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(404).json({ error: 'Producto no encontrado' });
 
@@ -154,19 +154,16 @@ router.put('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// PATCH /api/products/:id
-router.patch('/:id', async (req, res, next) => {
+exports.patch = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const error = validateBody(req.body, { partial: true });
     if (error) return res.status(400).json({ error });
 
-    const FIELD_MAP = { name: 'nombre', description: 'descripcion', price: 'precio', imageUrl: 'imagen', stock: 'stock' };
     const updates = {};
-
     for (const [apiKey, dbKey] of Object.entries(FIELD_MAP)) {
       if (req.body[apiKey] !== undefined) {
         updates[dbKey] = typeof req.body[apiKey] === 'string' ? req.body[apiKey].trim() : req.body[apiKey];
@@ -183,6 +180,7 @@ router.patch('/:id', async (req, res, next) => {
       }
     }
 
+    // $set aplica solo los campos enviados sin sobreescribir los omitidos
     const producto = await Producto.findByIdAndUpdate(
       req.params.id,
       { $set: updates },
@@ -194,10 +192,9 @@ router.patch('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
+};
 
-// DELETE /api/products/:id
-router.delete('/:id', async (req, res, next) => {
+exports.remove = async (req, res, next) => {
   try {
     if (!isValidId(req.params.id)) return res.status(404).json({ error: 'Producto no encontrado' });
     const deleted = await Producto.findByIdAndDelete(req.params.id);
@@ -206,6 +203,4 @@ router.delete('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-module.exports = router;
+};

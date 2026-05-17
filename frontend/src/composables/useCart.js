@@ -10,10 +10,10 @@ function loadFromStorage() {
   }
 }
 
-// Estado en scope de módulo → singleton compartido por todos los componentes
+// Singleton en scope de módulo: todos los componentes comparten la misma instancia del carrito
 const items = reactive(loadFromStorage())
 
-// Persiste en localStorage ante cualquier cambio (items o cantidades)
+// deep:true detecta cambios en propiedades anidadas como quantity, que un watcher superficial ignoraría
 watch(items, () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...items]))
 }, { deep: true })

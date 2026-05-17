@@ -30,6 +30,7 @@ const productoSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     min: [0, 'El stock no puede ser negativo'],
+    // El tipo Number de Mongoose acepta decimales; el validador personalizado fuerza entero estricto
     validate: { validator: Number.isInteger, message: 'El stock debe ser un entero' }
   }
 }, { timestamps: true });

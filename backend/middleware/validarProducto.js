@@ -9,6 +9,7 @@ exports.validarProducto = [
     .notEmpty().withMessage('El precio es obligatorio')
     .isFloat({ min: 0 }).withMessage('El precio debe ser un número mayor o igual a 0'),
   body('descripcion')
+    // checkFalsy trata cadena vacía como campo ausente y omite la validación de longitud
     .optional({ checkFalsy: true })
     .trim()
     .isLength({ max: 500 }).withMessage('La descripción no puede superar 500 caracteres')

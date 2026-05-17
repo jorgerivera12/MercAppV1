@@ -8,6 +8,7 @@ const storage = multer.diskStorage({
   destination: 'uploads/',
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
+    // Timestamp como nombre de archivo para evitar colisiones sin depender del nombre original
     cb(null, Date.now() + ext);
   }
 });

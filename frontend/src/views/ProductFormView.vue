@@ -34,6 +34,7 @@ onMounted(async () => {
 })
 
 async function handleSubmit() {
+  // touchAll marca todos los campos antes de validar para mostrar todos los errores en el envío
   touchAll()
   if (!isValid.value) return
 

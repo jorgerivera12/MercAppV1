@@ -33,6 +33,7 @@ onMounted(async () => {
     categories.value = cats
     track(prod)
   } catch (err) {
+    // replace en lugar de push evita que el botón "Atrás" regrese a una URL inválida
     if (err.message.includes('no encontrado')) {
       router.replace({ name: 'not-found' })
     } else {

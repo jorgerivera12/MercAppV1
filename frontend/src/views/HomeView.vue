@@ -70,7 +70,7 @@ watch(() => route.query.q, (val) => {
   filters.q = val ?? ''
 }, { immediate: true })
 
-// Client-side price filter
+// Filtro de precio aplicado en cliente sobre productos ya cargados, sin peticiones adicionales al API
 const priceMin = ref('')
 const priceMax = ref('')
 
@@ -121,7 +121,7 @@ function onAddedToCart(product) {
 // Sidebar toggle (mobile)
 const sidebarOpen = ref(false)
 
-// Countdown timer (offer expires in ~3 days from first visit)
+// sessionStorage persiste el tiempo objetivo por pestaña; evita reiniciar el contador en cada navegación
 const timerH = ref('00')
 const timerM = ref('00')
 const timerS = ref('00')

@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
-const Usuario = require('../models/Usuario');
+const Usuario = require('../../models/Usuario');
 
+// Opción de layout compartida para no repetirla en cada llamada a render
 const LAYOUT_AUTH = { layout: 'auth' };
 
 exports.formRegistro = (req, res) => {

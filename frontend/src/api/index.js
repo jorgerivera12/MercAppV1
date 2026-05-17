@@ -7,9 +7,11 @@ async function request(path, { signal, ...options } = {}) {
     ...options
   })
   if (!res.ok) {
+    // .catch(() => ({})) previene error si el cuerpo de la respuesta de error no es JSON válido
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error ?? `Error ${res.status}`)
   }
+  // 204 No Content no tiene cuerpo; intentar .json() lanzaría un error de parseo
   return res.status === 204 ? null : res.json()
 }
 

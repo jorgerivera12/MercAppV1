@@ -1,6 +1,6 @@
 const router = require('express').Router();
-const ctrl = require('../controllers/authController');
-const { validarRegistro, validarLogin } = require('../middleware/validarAuth');
+const ctrl = require('../../controllers/web/authController');
+const { validarRegistro, validarLogin } = require('../../middleware/validarAuth');
 
 router.get('/registro', ctrl.formRegistro);
 router.post('/registro', validarRegistro, ctrl.registro);

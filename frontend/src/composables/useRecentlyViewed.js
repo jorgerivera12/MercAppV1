@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 const STORAGE_KEY = 'mercapp_recent'
 const MAX = 5
 
+// Singleton en scope de módulo: el historial persiste aunque el componente que lo usa se desmonte
 const recent = ref(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
 
 watch(recent, (val) => {
@@ -18,6 +19,7 @@ export function useRecentlyViewed() {
       price: product.price,
       imageUrl: product.imageUrl
     })
+    // slice garantiza que la lista no supere MAX elementos conservando los más recientes
     recent.value = list.slice(0, MAX)
   }
 

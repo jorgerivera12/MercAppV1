@@ -1,32 +1,34 @@
-const { Router } = require('express');
 const Categoria = require('../../models/Categoria');
 
-const router = Router();
+function toApi(c) {
+  return { id: c._id, name: c.nombre };
+}
 
-router.get('/', async (req, res, next) => {
+exports.getAll = async (req, res, next) => {
   try {
     const categorias = await Categoria.find().lean().sort({ nombre: 1 });
-    res.json(categorias.map(c => ({ id: c._id, name: c.nombre })));
+    res.json(categorias.map(toApi));
   } catch (err) {
     next(err);
   }
-});
+};
 
-router.post('/', async (req, res, next) => {
+exports.create = async (req, res, next) => {
   try {
     const { name } = req.body;
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({ error: 'name es obligatorio' });
     }
     const categoria = await Categoria.create({ nombre: name.trim() });
-    res.status(201).json({ id: categoria._id, name: categoria.nombre });
+    res.status(201).json(toApi(categoria));
   } catch (err) {
+    // 11000 es el código de error de índice único duplicado en MongoDB
     if (err.code === 11000) return res.status(400).json({ error: 'Ya existe una categoría con ese nombre' });
     next(err);
   }
-});
+};
 
-router.delete('/:id', async (req, res, next) => {
+exports.remove = async (req, res, next) => {
   try {
     const deleted = await Categoria.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Categoría no encontrada' });
@@ -34,6 +36,4 @@ router.delete('/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-});
-
-module.exports = router;
+};

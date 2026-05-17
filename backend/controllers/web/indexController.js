@@ -1,11 +1,13 @@
-const Producto = require('../models/Producto');
-const Usuario  = require('../models/Usuario');
+const Producto = require('../../models/Producto');
+const Usuario  = require('../../models/Usuario');
 
 exports.index = async (req, res) => {
+  // Ambas consultas corren en paralelo para reducir el tiempo de carga del dashboard
   const [totalProductos, productos] = await Promise.all([
     Producto.countDocuments(),
     Producto.find().lean().sort({ createdAt: -1 }).limit(5)
   ]);
+  // Delegar la suma a MongoDB es más eficiente que recorrer todos los documentos en JS
   const valorInventario = await Producto.aggregate([
     { $group: { _id: null, total: { $sum: '$precio' } } }
   ]);
@@ -26,6 +28,7 @@ exports.actualizarPassword = async (req, res) => {
   const { actual, nueva, confirmar } = req.body;
   const usuario = await Usuario.findById(req.session.usuarioId);
 
+  // Closure local para no repetir la llamada a render con el contexto de error
   const renderError = (msg) =>
     res.render('perfil', { title: 'Mi perfil', usuario: usuario.toObject(), passError: msg });
 

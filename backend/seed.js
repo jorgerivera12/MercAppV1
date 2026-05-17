@@ -30,11 +30,13 @@ async function seed() {
   await mongoose.connect(process.env.MONGO_URI);
   console.log('MongoDB conectado');
 
+  // Limpiar antes de insertar hace al script idempotente (seguro de ejecutar varias veces)
   await Categoria.deleteMany({});
   await Producto.deleteMany({});
   console.log('Colecciones limpiadas');
 
   const categoriaDocs = await Categoria.insertMany(categorias.map(nombre => ({ nombre })));
+  // Mapa nombre→_id para resolver referencias sin realizar consultas adicionales
   const catMap = Object.fromEntries(categoriaDocs.map(c => [c.nombre, c._id]));
   console.log(`${categoriaDocs.length} categorías insertadas`);
 

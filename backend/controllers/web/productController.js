@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const Producto = require('../models/Producto');
+const Producto = require('../../models/Producto');
 
 exports.listar = async (req, res) => {
   const productos = await Producto.find().lean().sort({ createdAt: -1 });
@@ -29,6 +29,7 @@ exports.crear = async (req, res) => {
   }
 
   const { nombre, descripcion, precio } = req.body;
+  // Cadena vacía coincide con el default del schema cuando no se adjunta imagen
   const imagen = req.file ? req.file.filename : '';
   await Producto.create({ nombre, descripcion, precio, imagen });
   res.redirect('/productos');
@@ -62,6 +63,7 @@ exports.actualizar = async (req, res) => {
 
   const { nombre, descripcion, precio } = req.body;
   const data = { nombre, descripcion, precio };
+  // Solo sobreescribir la imagen si el usuario subió un archivo nuevo en la edición
   if (req.file) data.imagen = req.file.filename;
   await Producto.findByIdAndUpdate(req.params.id, data);
   res.redirect('/productos');

@@ -1,7 +1,7 @@
 const router = require('express').Router();
-const ctrl = require('../controllers/productoController');
-const subirImagen = require('../middleware/upload');
-const { validarProducto } = require('../middleware/validarProducto');
+const ctrl = require('../../controllers/web/productController');
+const subirImagen = require('../../middleware/upload');
+const { validarProducto } = require('../../middleware/validarProducto');
 
 router.get('/',                ctrl.listar);
 router.get('/nuevo',           ctrl.formNuevo);

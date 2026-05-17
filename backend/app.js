@@ -1,21 +1,18 @@
 require('dotenv').config();
-const express = require('express');
+const express    = require('express');
 const { engine } = require('express-handlebars');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const mongoose = require('mongoose');
-const session = require('express-session');
-const path = require('path');
+const session    = require('express-session');
+const path       = require('path');
+const connectDB  = require('./config/database');
+const initChat   = require('./socket/chat');
 
-const app = express();
+connectDB();
+
+const app        = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
-
-// MongoDB
-mongoose.set('bufferCommands', false);
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB conectado'))
-  .catch(err => console.error('Error MongoDB:', err));
+const io         = new Server(httpServer);
 
 // Handlebars
 app.engine('hbs', engine({
@@ -35,13 +32,13 @@ app.engine('hbs', engine({
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middlewares
+// Middlewares globales
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Sesiones compartidas con Socket.io
+// Sesión compartida con Socket.io
 const sessionMiddleware = session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -49,6 +46,7 @@ const sessionMiddleware = session({
   cookie: { maxAge: 1000 * 60 * 60 * 24 }
 });
 app.use(sessionMiddleware);
+// Inyectar el mismo middleware de sesión en Socket.io para acceder a req.session en los handlers
 io.use((socket, next) => sessionMiddleware(socket.request, {}, next));
 
 // Variables globales para vistas
@@ -60,16 +58,16 @@ app.use((req, res, next) => {
 });
 
 // Rutas web
-app.use('/', require('./routes/index'));
-app.use('/', require('./routes/auth'));
-app.use('/productos', require('./middleware/autenticado'), require('./routes/productos'));
+app.use('/', require('./routes/web/index'));
+app.use('/', require('./routes/web/auth'));
+app.use('/productos', require('./middleware/autenticado'), require('./routes/web/products'));
 
 // API REST
-app.use('/api/categories', require('./routes/api/categorias'));
-app.use('/api/products',   require('./routes/api/productos'));
+app.use('/api/categories', require('./routes/api/categories'));
+app.use('/api/products',   require('./routes/api/products'));
 app.use('/api/cart',       require('./routes/api/cart'));
 
-// 404 y manejo de errores para la API
+// 404 y error handler para la API
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `Ruta no encontrada: ${req.method} ${req.path}` });
 });
@@ -81,71 +79,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-// ── Chat privado con Socket.io ────────────────────────
-const socketToNombre  = new Map(); // socketId  → nombre
-const nombreToSockets = new Map(); // nombre    → Set<socketId>
-const historialPrivado = new Map(); // "A|B"    → [mensajes]
-
-function convKey(a, b)   { return [a, b].sort().join('|'); }
-function uniqueUsuarios() { return Array.from(nombreToSockets.keys()); }
-
-function emitToUser(nombre, event, data) {
-  const sockets = nombreToSockets.get(nombre);
-  if (sockets) sockets.forEach(sid => io.to(sid).emit(event, data));
-}
-
-io.on('connection', (socket) => {
-  const nombre = socket.request.session?.usuarioNombre;
-  if (!nombre) return socket.disconnect();
-
-  // Registrar socket
-  socketToNombre.set(socket.id, nombre);
-  if (!nombreToSockets.has(nombre)) nombreToSockets.set(nombre, new Set());
-  nombreToSockets.get(nombre).add(socket.id);
-
-  // Avisar a todos que hay un nuevo usuario
-  io.emit('chat:usuarios', uniqueUsuarios());
-
-  // Cargar historial de una conversación
-  socket.on('chat:cargar', (otroUsuario) => {
-    const key  = convKey(nombre, otroUsuario);
-    const hist = historialPrivado.get(key) || [];
-    socket.emit('chat:historial', { con: otroUsuario, mensajes: hist });
-  });
-
-  // Mensaje privado
-  socket.on('chat:privado', ({ para, texto }) => {
-    if (!texto || typeof texto !== 'string' || !para) return;
-
-    const key  = convKey(nombre, para);
-    if (!historialPrivado.has(key)) historialPrivado.set(key, []);
-    const hist = historialPrivado.get(key);
-
-    const msg = {
-      de:   nombre,
-      para,
-      texto: texto.trim().substring(0, 500),
-      hora:  new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
-    };
-
-    hist.push(msg);
-    if (hist.length > 100) hist.shift();
-
-    // Enviar al emisor y al receptor
-    socket.emit('chat:mensaje:privado', msg);
-    emitToUser(para, 'chat:mensaje:privado', msg);
-  });
-
-  socket.on('disconnect', () => {
-    socketToNombre.delete(socket.id);
-    const sockets = nombreToSockets.get(nombre);
-    if (sockets) {
-      sockets.delete(socket.id);
-      if (sockets.size === 0) nombreToSockets.delete(nombre);
-    }
-    io.emit('chat:usuarios', uniqueUsuarios());
-  });
-});
+initChat(io);
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));

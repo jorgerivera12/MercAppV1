@@ -8,6 +8,7 @@ exports.validarRegistro = [
     .trim()
     .notEmpty().withMessage('El email es obligatorio')
     .isEmail().withMessage('Ingresa un email válido')
+    // normalizeEmail convierte a minúsculas y elimina variantes de alias antes de persistir
     .normalizeEmail(),
   body('password')
     .isLength({ min: 6 }).withMessage('La contraseña debe tener mínimo 6 caracteres'),

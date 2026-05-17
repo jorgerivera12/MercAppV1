@@ -1,7 +1,9 @@
 import { ref } from 'vue'
 import { api } from '@/api/index.js'
 
+// Estado en scope de módulo: la lista de categorías se comparte entre todos los consumidores
 const categories = ref([])
+// fetchPromise evita peticiones simultáneas si varios componentes llaman a load() al mismo tiempo
 let fetchPromise = null
 
 export function useCategories() {
