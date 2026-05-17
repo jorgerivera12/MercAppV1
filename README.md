@@ -2,7 +2,45 @@
 
 Aplicación de comercio electrónico de página única (SPA) construida con Vue 3 en el frontend y Express en el backend. Permite explorar un catálogo de productos, filtrarlos por categoría o precio, ver el detalle de cada uno y gestionarlos a través de un CRUD completo.
 
+
+## Datos del Estudiante
+
+| Campo | Detalle |
+|---|---|
+| Nombre | Jorge Rivera |
+| Correo | jriveray@est.ups.edu.ec |
+| Materia | Aplicaciones Web |
+| Ciclo | Cuarto Ciclo |
+| Institución | Universidad Politécnica Salesiana (UPS) |
+
+
 **Repositorio:** [https://github.com/jorgerivera12/MercAppV1.git](https://github.com/jorgerivera12/MercAppV1.git)
+
+---
+
+## Capturas de pantalla
+
+### Vista de escritorio
+
+| Hero & navegación | Catálogo con filtros |
+|:-----------------:|:--------------------:|
+| ![Home — sección hero con barra de búsqueda y categorías destacadas](documentation/img/Captura1-WEB.png) | ![Catálogo con panel lateral de filtros por categoría y precio](documentation/img/Captura2-WEB.png) |
+
+| Grid de productos & footer | Carrito de compras |
+|:--------------------------:|:------------------:|
+| ![Grid de tarjetas de producto con historial de vistos recientes y footer](documentation/img/Captura3-WEB.png) | ![Vista del carrito con resumen de ítems, cantidades y total de compra](documentation/img/Captura4-WEB.png) |
+
+---
+
+### Vista móvil
+
+| Hero & navegación | Catálogo con filtros |
+|:-----------------:|:--------------------:|
+| ![Home móvil — hero adaptado a pantalla pequeña con menú colapsado](documentation/img/Captura5-MOVIL.png) | ![Filtros y catálogo en disposición vertical optimizada para móvil](documentation/img/Captura6-MOVIL.png) |
+
+| Grid de productos & footer | Carrito de compras |
+|:--------------------------:|:------------------:|
+| ![Grid de una columna con historial de vistos y footer responsive](documentation/img/Captura7-MOVIL.png) | ![Carrito de compras completamente funcional en pantalla móvil](documentation/img/Captura8-MOVIL.png) |
 
 ---
 
